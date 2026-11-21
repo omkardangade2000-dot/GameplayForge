@@ -17,3 +17,6 @@ fonts/*.ttf
 GameplayForge_Output/
 _work/
 *.zip
+
+# Dashboard job logs and history (machine-specific)
+dashboard/jobs/

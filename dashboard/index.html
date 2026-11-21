@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GameplayForge</title>
+<style>
+:root{
+  --bg:#f4f5f7;--panel:#ffffff;--panel2:#f0f1f4;--line:#dfe2e8;--text:#16181d;--muted:#626875;
+  --accent:#e4572e;--accent-ink:#fff;--ok:#1f8a4c;--warn:#b7791f;--bad:#c53030;--bar:#e6e8ec;
+  --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1115;--panel:#171a20;--panel2:#1d2129;--line:#2a2f39;--text:#e7e9ee;--muted:#8d94a3;
+  --accent:#ff6b3d;--accent-ink:#140a05;--ok:#3ccf7a;--warn:#f0b450;--bad:#ff6b6b;--bar:#262b34;}}
+:root[data-theme="dark"]{
+  --bg:#0f1115;--panel:#171a20;--panel2:#1d2129;--line:#2a2f39;--text:#e7e9ee;--muted:#8d94a3;
+  --accent:#ff6b3d;--accent-ink:#140a05;--ok:#3ccf7a;--warn:#f0b450;--bad:#ff6b6b;--bar:#262b34;}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 "Segoe UI",system-ui,sans-serif}
+button,select,input{font:inherit;color:inherit}
+header{display:flex;align-items:center;gap:20px;padding:14px 24px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5;flex-wrap:wrap}
+.brand{font-weight:700;font-size:17px;letter-spacing:.2px;display:flex;align-items:center;gap:8px}
+.brand i{width:10px;height:10px;border-radius:2px;background:var(--accent);display:inline-block;transform:rotate(45deg)}
+.meters{display:flex;gap:16px;margin-left:auto;flex-wrap:wrap;flex:1 1 auto;justify-content:flex-end;min-width:0}
+#theme{flex:none}
+@media (max-width:1180px){#theme{margin-left:auto}.meters{order:3;flex-basis:100%;justify-content:flex-start;margin-left:0}.meter,.meter.gpu{width:auto;flex:1 1 140px}}
+.meter{width:150px}
+.meter.gpu{width:200px}
+.meter .lbl{font-size:11px;color:var(--muted);display:flex;justify-content:space-between;gap:8px;white-space:nowrap}
+.meter .lbl span:last-child{overflow:hidden;text-overflow:ellipsis}
+.track{height:5px;background:var(--bar);border-radius:3px;overflow:hidden;margin-top:3px}
+.track b{display:block;height:100%;background:var(--accent);transition:width .6s}
+main{max-width:1280px;margin:0 auto;padding:20px 24px 60px;display:grid;grid-template-columns:340px 1fr;gap:20px}
+@media (max-width:900px){main{grid-template-columns:1fr;padding:16px}header{padding:12px 16px}.meters{margin-left:0}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 12px;font-weight:600}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+select,input[type=text],input[type=number]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:var(--panel2)}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin-top:10px}
+.checks label{display:flex;gap:6px;align-items:center;margin:0;color:var(--text);font-size:13px;cursor:pointer}
+.seg{display:flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{flex:1;padding:7px;border:0;background:var(--panel2);cursor:pointer}
+.seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn{padding:9px 14px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);cursor:pointer}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;font-weight:600}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+.err{color:var(--bad);font-size:13px;margin-top:8px;min-height:1em}
+.col{display:flex;flex-direction:column;gap:20px;min-width:0}
+.steps{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:14px 0 8px}
+.steps div{height:6px;border-radius:3px;background:var(--bar)}
+.steps div.done{background:var(--ok)}.steps div.now{background:var(--accent);animation:pulse 1.4s infinite}
+@keyframes pulse{50%{opacity:.45}}
+.stage{font-size:18px;font-weight:600}
+.lastline{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
+pre.log{font-family:var(--mono);font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:10px;max-height:340px;overflow:auto;white-space:pre-wrap;word-break:break-word;margin:10px 0 0}
+.idle{color:var(--muted)}
+.pill{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--panel2);border:1px solid var(--line);white-space:nowrap}
+.pill.finished{color:var(--ok)}.pill.failed{color:var(--bad)}.pill.running{color:var(--accent)}.pill.stopped,.pill.stopping{color:var(--warn)}
+.projects{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.proj{border:1px solid var(--line);border-radius:9px;padding:12px;cursor:pointer;background:var(--panel2);min-width:0}
+.proj:hover,.proj.sel{border-color:var(--accent)}
+.proj .t{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj .m{font-size:12px;color:var(--muted);margin-top:4px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:12px 0;overflow-x:auto}
+.tabs button{border:0;background:none;padding:8px 12px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button.on{color:var(--text);border-color:var(--accent)}
+.media{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.media.shorts{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+.item{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel2);min-width:0}
+.item video,.item img{width:100%;display:block;background:#000}
+.shorts .item video{aspect-ratio:9/16;object-fit:contain}
+.item .cap{padding:8px 10px;font-size:12px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.item .cap span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.files{list-style:none;padding:0;margin:0}
+.files li{display:flex;justify-content:space-between;gap:10px;padding:7px 4px;border-bottom:1px solid var(--line);font-size:13px}
+.files li a{color:var(--text);cursor:pointer;text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.files li a:hover{color:var(--accent)}
+.history{list-style:none;margin:0;padding:0}
+.history li{display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer}
+.history li .n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.muted{color:var(--muted)}
+.empty{color:var(--muted);padding:18px 0;text-align:center}
+a.link{color:var(--accent);cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><i></i>GameplayForge</div>
+  <div class="meters" id="meters"></div>
+  <button class="btn" id="theme" title="Toggle light/dark">◐</button>
+</header>
+<main>
+  <div class="col">
+    <section class="card">
+      <h2>New run</h2>
+      <label for="video">Recording <span class="muted" id="inputDir"></span></label>
+      <select id="video"></select>
+      <div class="hint" id="videoHint"></div>
+      <label>Mode</label>
+      <div class="seg" id="mode"><button data-v="auto" class="on">Auto (action)</button><button data-v="cinematic">Cinematic (story)</button></div>
+      <label for="game">Game profile</label>
+      <select id="game"><option value="">Auto-detect</option></select>
+      <div class="checks">
+        <label><input type="checkbox" id="commentary"> Has my commentary</label>
+        <label><input type="checkbox" id="force"> Redo analysis</label>
+        <label><input type="checkbox" id="no_shorts"> Skip Shorts</label>
+        <label><input type="checkbox" id="no_long"> Skip long video</label>
+        <label><input type="checkbox" id="no_judge"> Skip AI judge (fast, rough)</label>
+      </div>
+      <label for="long_target">Long video target (seconds, optional)</label>
+      <input type="number" id="long_target" min="30" placeholder="from config.yaml">
+      <div class="row" style="margin-top:14px">
+        <button class="btn primary" id="start">Start run</button>
+        <button class="btn" id="doctor" title="python -m gameplayforge doctor">Check setup</button>
+      </div>
+      <div class="err" id="runErr"></div>
+    </section>
+    <section class="card">
+      <h2>Recent jobs</h2>
+      <ul class="history" id="history"></ul>
+    </section>
+  </div>
+  <div class="col">
+    <section class="card" id="activeCard">
+      <h2>Current job</h2>
+      <div id="active"></div>
+    </section>
+    <section class="card">
+      <div class="row" style="justify-content:space-between"><h2 style="margin:0">Outputs</h2><span class="muted" id="outDir" style="font-size:12px"></span></div>
+      <div class="projects" id="projects" style="margin-top:12px"></div>
+      <div id="detail"></div>
+    </section>
+  </div>
+</main>
+<script>
+const $=s=>document.querySelector(s), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const gb=b=>b==null?'?':b>=1e9?(b/1e9).toFixed(1)+' GB':(b/1e6).toFixed(0)+' MB';
+const dur=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}h ${m}m`:m?`${m}m ${x}s`:`${x}s`};
+const ago=t=>{const d=Date.now()/1000-t;return d<90?'just now':d<3600?Math.round(d/60)+' min ago':d<86400?Math.round(d/3600)+' h ago':new Date(t*1000).toLocaleDateString()};
+const fileUrl=p=>'/file?path='+encodeURIComponent(p);
+async function api(path,body){
+  const r=await fetch(path,body?{method:'POST',headers:{'Content-Type':'application/json','X-Forge':'1'},body:JSON.stringify(body)}:{});
+  const j=await r.json().catch(()=>({error:'Bad response'}));if(!r.ok)throw new Error(j.error||r.statusText);return j;
+}
+// theme
+try{const t=localStorage.getItem('gf-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}
+$('#theme').onclick=()=>{const d=document.documentElement,dark=d.dataset.theme?d.dataset.theme==='dark':matchMedia('(prefers-color-scheme: dark)').matches;d.dataset.theme=dark?'light':'dark';try{localStorage.setItem('gf-theme',d.dataset.theme)}catch(e){}};
+// mode toggle
+let mode='auto';
+$('#mode').onclick=e=>{const b=e.target.closest('button');if(!b)return;mode=b.dataset.v;[...$('#mode').children].forEach(x=>x.classList.toggle('on',x===b))};
+
+let S=null, logJob=null, logOff=0, logText='', showLog=false, recs=[], selProj=null, projTab='Long_Videos';
+
+function meters(sys){
+  const m=[['CPU',sys.cpu,sys.cpu+'%'],['RAM',sys.ram,sys.ram+'%']];
+  for(const g of sys.gpus)m.push([`${g.name}${g.used_by_forge?' ★':''}`,g.util,`${g.util}% · ${(g.mem_used/1024).toFixed(1)}/${(g.mem_total/1024).toFixed(0)} GB · ${g.temp}°C`,1]);
+  $('#meters').innerHTML=m.map(([n,v,t,isGpu])=>`<div class="meter${isGpu?' gpu':''}" title="${esc(n+': '+t+(n.includes('★')?' (used by GameplayForge)':''))}"><div class="lbl"><span>${esc(n)}</span><span>${esc(t)}</span></div><div class="track"><b style="width:${Math.min(100,v)}%"></b></div></div>`).join('')+
+   `<div class="meter"><div class="lbl"><span>Output disk free</span><span>${gb(sys.disk_free)}</span></div></div>`;
+}
+function cleanLog(t){ // collapse tqdm \r frames to their final state
+  return t.replace(/\r\n/g,'\n').split('\n').map(l=>{const p=l.split('\r').filter(x=>x.trim());return p.length?p[p.length-1]:''}).join('\n');
+}
+function renderActive(){
+  const a=S.active, el=$('#active');
+  $('#start').disabled=$('#doctor').disabled=!!a;
+  if(!a){el.innerHTML='<div class="idle">Nothing running. Pick a recording and press <b>Start run</b>.</div>';return}
+  const name=a.kind==='doctor'?'Setup check':(a.video||'');
+  const steps=[1,2,3,4,5,6].map(i=>`<div class="${i<a.step?'done':i===a.step?'now':''}"></div>`).join('');
+  el.innerHTML=`<div class="row" style="justify-content:space-between"><div style="min-width:0"><div class="muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(name)}</div>
+   <div class="stage">${a.kind==='run'?esc(a.stage||'Starting…'):'Running '+esc(a.kind)}</div></div>
+   <div class="row"><span class="pill running">${a.state} · ${dur(Date.now()/1000-a.started)}</span><button class="btn danger" id="stop">Stop</button></div></div>
+   ${a.kind==='run'?`<div class="steps">${steps}</div><div class="muted" style="font-size:12px">Step ${a.step||0} of 6 · analyse → cutscenes → gameplay → plan → render → QC</div>`:''}
+   <div class="lastline">${esc(a.last_line)}</div>
+   <div class="row" style="margin-top:10px"><a class="link" id="toggleLog">${showLog?'Hide':'Show'} full log</a></div>
+   ${showLog?'<pre class="log" id="log"></pre>':''}`;
+  $('#stop').onclick=async()=>{if(!confirm('Stop this run? Analysis already cached is kept.'))return;try{await api('/api/stop',{job:a.id});tick()}catch(e){alert(e.message)}};
+  $('#toggleLog').onclick=()=>{showLog=!showLog;renderActive();if(showLog)paintLog()};
+  if(showLog)paintLog();
+}
+function paintLog(){const p=$('#log');if(!p)return;const stick=p.scrollTop+p.clientHeight>=p.scrollHeight-20;p.textContent=cleanLog(logText).slice(-120000);if(stick||!p.dataset.init){p.scrollTop=p.scrollHeight;p.dataset.init=1}}
+async function pullLog(jid){
+  if(jid!==logJob){logJob=jid;logOff=0;logText=''}
+  try{const r=await api(`/api/log?job=${jid}&offset=${logOff}`);logOff=r.offset;logText+=r.text;if(logText.length>600000)logText=logText.slice(-400000);paintLog()}catch(e){}
+}
+function renderHistory(){
+  const h=S.history.filter(j=>!S.active||j.id!==S.active.id);
+  $('#history').innerHTML=h.length?h.map(j=>`<li data-id="${j.id}" title="Show log"><span class="pill ${j.state}">${j.state}</span><span class="n">${esc(j.kind==='doctor'?'Setup check':j.video)}</span><span class="muted">${ago(j.started)}</span></li>`).join(''):'<li class="muted" style="cursor:default">No jobs yet</li>';
+  $('#history').querySelectorAll('li[data-id]').forEach(li=>li.onclick=()=>openLog(li.dataset.id));
+}
+async function openLog(id){
+  const j=S.history.find(x=>x.id===id);const r=await api(`/api/log?job=${id}&offset=0`);
+  const len=j.ended?dur(j.ended-j.started):'';
+  $('#detail').innerHTML=`<div class="row" style="justify-content:space-between;margin-top:18px"><b style="overflow:hidden;text-overflow:ellipsis">${esc(j.kind==='doctor'?'Setup check':j.video)}</b><span class="pill ${j.state}">${j.state}${len?' · '+len:''}</span></div><pre class="log" style="max-height:520px">${esc(cleanLog(r.text))}</pre>`;
+  selProj=null;paintProjects(window._projects||[]);const p=$('#detail pre');p.scrollTop=p.scrollHeight;$('#detail').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function renderRecordings(){
+  const cur=$('#video').value;
+  $('#video').innerHTML=recs.length?recs.map(r=>`<option value="${esc(r.name)}">${esc(r.name)} (${gb(r.size)})${r.has_output?' ✓':''}</option>`).join(''):'<option value="">No recordings found</option>';
+  if(recs.some(r=>r.name===cur))$('#video').value=cur;
+  hintVideo();
+}
+function hintVideo(){const r=recs.find(x=>x.name===$('#video').value);$('#videoHint').textContent=r?(r.has_output?'✓ Already processed - re-running reuses the cached analysis unless "Redo analysis" is on.':'Not processed yet.')+' Modified '+ago(r.mtime)+'.':''}
+$('#video').onchange=hintVideo;
+function paintProjects(list){
+  window._projects=list;
+  $('#projects').innerHTML=list.length?list.map(p=>`<div class="proj ${selProj===p.name?'sel':''}" data-n="${esc(p.name)}"><div class="t" title="${esc(p.name)}">${esc(p.name)}</div>
+   <div class="m">${p.videos.Long_Videos} long · ${p.videos.YouTube_Shorts} shorts · ${p.videos.Cutscenes} cutscenes</div><div class="m">${gb(p.size)} · ${ago(p.mtime)}</div></div>`).join(''):'<div class="empty">No outputs yet</div>';
+  $('#projects').querySelectorAll('.proj').forEach(el=>el.onclick=()=>{selProj=el.dataset.n;projTab='Long_Videos';paintProjects(list);loadProject()});
+}
+async function loadProject(){
+  if(!selProj)return;
+  const d=await api('/api/project?name='+encodeURIComponent(selProj));
+  const tabs=[['Long_Videos','Long video'],['YouTube_Shorts','Shorts'],['Cutscenes','Cutscenes'],['Reports','Reports'],['_report','Editing report']];
+  const f=d.files;
+  let body='';
+  if(projTab==='_report')body=d.report?`<pre class="log" style="max-height:560px">${esc(d.report)}</pre>`:'<div class="empty">No editing report</div>';
+  else{
+    const list=f[projTab]||[], vids=list.filter(x=>/\.mp4$/i.test(x.name)), imgs=list.filter(x=>/\.(jpe?g|png)$/i.test(x.name)), rest=list.filter(x=>!vids.includes(x)&&!imgs.includes(x));
+    if(projTab==='Cutscenes'&&vids.length)body+=`<div class="hint" style="margin-bottom:10px">Cutscene clips are kept for reference. GameplayForge marks them DO NOT UPLOAD (game publisher policy).</div>`;
+    if(vids.length)body+=`<div class="media ${projTab==='YouTube_Shorts'?'shorts':''}">${vids.map(v=>`<div class="item"><video controls preload="metadata" src="${fileUrl(v.path)}"></video><div class="cap"><span title="${esc(v.name)}">${esc(v.name)}</span><span class="muted">${gb(v.size)}</span></div></div>`).join('')}</div>`;
+    if(imgs.length)body+=`<div class="media" style="margin-top:14px">${imgs.map(v=>`<div class="item"><a href="${fileUrl(v.path)}" target="_blank"><img loading="lazy" src="${fileUrl(v.path)}" alt="${esc(v.name)}"></a><div class="cap"><span title="${esc(v.name)}">${esc(v.name)}</span></div></div>`).join('')}</div>`;
+    if(rest.length)body+=`<ul class="files" style="margin-top:14px">${rest.map(v=>`<li><a data-p="${esc(v.path)}" class="txt">${esc(v.name)}</a><span class="muted">${(v.size/1024).toFixed(1)} KB</span></li>`).join('')}</ul><div id="txtView"></div>`;
+    if(!list.length)body='<div class="empty">Nothing here</div>';
+  }
+  $('#detail').innerHTML=`<div class="row" style="justify-content:space-between;margin-top:18px"><b style="overflow:hidden;text-overflow:ellipsis;min-width:0">${esc(d.name)}</b><button class="btn" id="openFolder">Open folder</button></div>
+   <div class="tabs">${tabs.map(([k,n])=>`<button data-k="${k}" class="${projTab===k?'on':''}">${n}${f[k]?` (${f[k].length})`:''}</button>`).join('')}</div>${body}`;
+  $('#detail').querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{projTab=b.dataset.k;loadProject()});
+  $('#openFolder').onclick=()=>api('/api/open',{path:projTab.startsWith('_')?d.name:d.name+'/'+projTab}).catch(e=>alert(e.message));
+  $('#detail').querySelectorAll('a.txt').forEach(a=>a.onclick=async()=>{
+    if(!/\.(txt|csv)$/i.test(a.dataset.p)){api('/api/open',{path:a.dataset.p});return}
+    const r=await api('/api/text?path='+encodeURIComponent(a.dataset.p));
+    $('#txtView').innerHTML=`<div class="row" style="justify-content:space-between;margin-top:12px"><b>${esc(a.textContent)}</b><button class="btn" id="copyTxt">Copy</button></div><pre class="log" style="max-height:460px">${esc(r.text)}</pre>`;
+    $('#copyTxt').onclick=()=>navigator.clipboard.writeText(r.text).then(()=>$('#copyTxt').textContent='Copied');
+  });
+}
+async function start(kind){
+  $('#runErr').textContent='';
+  const body={kind};
+  if(kind==='run'){Object.assign(body,{video:$('#video').value,mode,game:$('#game').value,long_target:$('#long_target').value});
+    for(const k of ['commentary','force','no_shorts','no_long','no_judge'])body[k]=$('#'+k).checked;}
+  try{await api('/api/run',body);showLog=false;tick()}catch(e){$('#runErr').textContent=e.message}
+}
+$('#start').onclick=()=>start('run');
+$('#doctor').onclick=()=>start('doctor');
+
+let wasActive=false, lastProjLoad=0;
+async function tick(){
+  try{S=await api('/api/state')}catch(e){$('#active').innerHTML='<div class="err">Dashboard server is not responding. Start dashboard.bat again.</div>';return}
+  meters(S.system);
+  $('#inputDir').textContent='· '+S.input_dir;$('#outDir').textContent=S.output_dir;
+  if($('#game').options.length<=1)S.games.forEach(g=>$('#game').add(new Option(g,g)));
+  renderActive();renderHistory();
+  if(S.active)pullLog(S.active.id);
+  const nowActive=!!S.active;
+  if((wasActive&&!nowActive)||Date.now()-lastProjLoad>30000){lastProjLoad=Date.now();
+    recs=await api('/api/recordings');renderRecordings();paintProjects(await api('/api/projects'));
+    if(wasActive&&!nowActive&&selProj)loadProject();}
+  wasActive=nowActive;
+}
+tick();setInterval(tick,2500);
+</script>
+</body>
+</html>

@@ -12,6 +12,7 @@ huggingface_hub
 faster-whisper
 rembg
 yt-dlp
+psutil                 # dashboard (system meters, stopping a run)
 # Optional (AI thumbnail finish, thumbai.py):
 diffusers
 # Optional (thumbai upscaler / voice-over experiments): spandrel, kokoro
