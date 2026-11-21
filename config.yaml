@@ -1,0 +1,347 @@
+﻿# GameplayForge configuration. Edit paths if needed; everything else has sane defaults.
+paths:
+  input_dir: "C:/Users/YOU/Videos"                  # raw recordings are read from here
+  output_dir: "C:/Users/YOU/Videos/GameplayForge_Output"
+
+hardware:
+  decode: auto            # auto | cuda | cpu       (NVDEC on the RTX 5070 Ti)
+  encoder: auto           # auto | h264_nvenc | hevc_nvenc | av1_nvenc | libx264
+  cq: 19                  # NVENC quality (lower = better/larger). libx264 uses crf = cq
+  preset: p5              # NVENC p1(fast)..p7(best). libx264 preset is chosen automatically
+  maxrate: 60M            # cap (YouTube 4K60 upload spec 53-68 Mbps). Uncapped 4K was ~115 Mbps = 10 GB per 13 min
+
+analysis:
+  fps: 4                  # samples per second used for understanding the footage
+  vision_backend: siglip2 # siglip2 (real visual understanding) | heuristic (audio+motion only, NOT visual AI)
+  model: google/siglip2-so400m-patch16-256
+  batch: 64
+
+game: auto                 # auto = the AI names the game from the first minutes and picks the profile below
+games:                     # per-game hints added to every AI question (what a kill / fight / menu looks like)
+  vtm_bloodlines2:
+    match: [bloodlines, vampire]
+    view: first-person
+    has_cutscenes: true
+    notes: >-
+      Stealth uses a special vision mode where enemies show as glowing purple, red or golden outlines.
+      Feeding (grabbing a person and biting their neck, a close-up of a face or neck) is a kill.
+      Subtitles alone do NOT mean dialogue - characters shout during fights.
+      Combat is fast first-person melee with vampire powers: claw and fist combos, drop kicks, launching enemies
+      into the air and juggling them (air combos), telekinesis pulls, blink/dash attacks, enemies set on fire.
+      An enemy thrown, launched or juggled is combat, not parkour.
+    style_overrides:           # owner's reference 2026-11-18: youtu.be/IFYL9-W29uc "banu hakim brutal combat and air
+                               # combos" (3:08, 11K views). Measured in the browser: ~6 cuts in 3 min (~30 s per clip),
+                               # every clip a WHOLE fight, no fades, no slow motion, no zoom, no text, HUD kept, opens
+                               # straight into a fight. Comments praise the fluid uncut combo chains.
+      encounters:
+        lead_in: 2.0           # start just before the first strike
+        post_roll: 2.5         # end after the last enemy is down
+        cut_dead_windows: 3    # inside a fight only walks of 12 s+ are removed; combos are never cut
+        merge_gap_windows: 3
+        start_at_action: true  # review 2026-11-18: open on the first strike, end after the last (no sneaking lead)
+        max_inner_talk_s: 8    # a mid-fight taunt / white power flash (<= 8 s) does not split one fight in two
+      style:
+        long:
+          cold_open: false     # no teaser: the video opens straight into the best fight, shown whole
+          open_with_best: true
+          target_seconds: 600
+        slowmo:
+          enabled: false       # the reference never slows down
+        punch_in:
+          enabled: false       # first-person melee kills happen at arm's length - no zoom needed
+        short:
+          themes: [combat]     # one WHOLE fight per short (no kill chains, no movement chains)
+          count_per_theme: 6
+          max_total: 6
+          lead_in: 2.0
+          length_min: 15
+          length_max: 59       # whole fight; a longer fight keeps its best part ending on a kill
+          after_last_kill: 2.0
+  phantom_blade_zero:
+    match: [phantom blade, phantomblade, pbz_, kungfupunk, kung fu punk]
+    view: third-person
+    has_cutscenes: true
+    notes: >-
+      Phantom Blade Zero: a fast third-person kung-fu sword action game (dark wuxia). The player character is a
+      swordsman in dark clothes. Combat is melee: sword combos, parries and deflects (bright sparks, a flash and a
+      short slow-down), dodges with afterimages, special Phantom Edge weapon attacks. A KILL is an enemy collapsing,
+      being cut down or a finishing / execution animation (close-up, camera moves around both fighters); several
+      enemies falling in one fight is a combo. Big health bar with a name at the bottom = boss_fight. Walking
+      through areas, menus, inventory, the map, loading screens and a 'starting soon' / 'be right back' stream
+      screen are not combat. A streamer webcam or chat overlay may be in a corner - ignore it.
+  cs2:
+    match: [counter-strike, counter strike, cs2, csgo, cs:go]
+    view: first-person
+    has_cutscenes: false
+    edit_mode: fights          # same fight-centred edit as BGMI (owner rules: full fights, no walking, no own death)
+    kill_counter:              # CS2 has no own kill counter on the HUD - this only finds SPECTATING (player dead)
+      step: 2.0
+      # name panel right of the health number (2560x1440 coords): 'teammate name / ADR 95' = watching a teammate.
+      # Tried and dropped: the '[MOUSE1] Next Player' hint bar (fades after a few s) and 'is a name shown?' (missed
+      # short names like 'Fur' half the time). The fixed word ADR: 29/30 test frames right (miss = panel fading in)
+      spectate_crop: [867, 1333, 220, 80]
+      spectate_word: ADR
+      death_fade: 3.0
+    kill_feed:                 # own kills = kill-feed lines whose killer is the player's name
+      mode: name
+      game_name: Counter-Strike 2
+      crop: [1880, 95, 680, 330]
+      zoom: 1
+      step: 1.0
+      same_victim_s: 20
+      ammo_crop: [1690, 1330, 140, 75]  # magazine number, bottom centre-right: drops = own shots (2560x1440 coords)
+    player_names: []           # your in-game name(s), e.g. [YourName]
+    notes: >-
+      Counter-Strike 2, first-person tactical shooter, 5v5 rounds. A streamer webcam sits in a corner and the
+      team / money HUD is always visible - normal. A KILL is an enemy dropping dead after the player's shots, with a
+      new line in the kill feed at the TOP RIGHT whose first name is highlighted (the player); headshot icon =
+      headshot. Several kills in one round = a multikill (2K-5K); the player alone alive against several enemies
+      = clutch. Firing at enemies, peeking with the weapon raised, throwing grenades or flashes at enemies are
+      combat. Walking with the knife out, the buy menu, the freeze time at round start, 'Round Won' / 'Round Lost'
+      banners, the scoreboard, the main menu / lobby, the match-end screen, warmup and SPECTATING another player
+      after the player died are not the player's action (menu_or_map). Opening weapon cases, the skin inventory
+      and trading are ALWAYS menu_or_map (YouTube age-restricts skin-gambling content since Nov 2025). stealth_kill and boss_fight never happen.
+  gta6:                        # GTA VI - releases 2026-11-19 (PS5 / Xbox Series; PC later). HUD unknown before launch:
+    title: GTA 6               # nothing below depends on HUD positions - cutscenes = HUD gone + film camera + subtitles
+    match: [gta6, gta 6, gta_6, gtavi, gta vi, grand theft auto vi, grand theft auto 6]
+    view: third-person
+    has_cutscenes: true
+    edit_mode: cinematic       # story moments + episodes + subtitle shorts (cinematic.py)
+    policy:                    # Rockstar video policy, checked 2026-11-16 (support.rockstargames.com, updated 2025-01-10)
+      isolated_cinematics: forbidden   # "isolated videos of the game's cinematics will be removed"
+      release_date: 2026-11-19         # before this date: everything is DO NOT POST (pre-release = takedown)
+      spoiler_hold_days: 30            # major twists stay inside full episodes for the first 30 days
+    characters: [lucia, jason, cal, boobie, dre'quan, raul, brian, real dimez]   # from Rockstar's character pages
+    trend:
+      queries: ["gta 6 cutscene", "gta 6 funny moments", "gta 6 first time playing", "gta 6 reaction",
+                "gta 6 best scene", "gta 6 lucia", "gta 6 jason", "gta 6 walkthrough part 1", "gta 6 gameplay",
+                "gta 6 story explained", "gta 6 hidden details", "gta 6 ending"]
+      per_query: 40
+      detail_top: 60
+    notes: >-
+      Grand Theft Auto VI: third-person open-world crime game set in Leonida / Vice City. During GAMEPLAY a minimap or
+      radar, weapon / health / money HUD and on-screen prompts are visible. A STORY CUTSCENE has no HUD at all, a
+      film-like camera (close-ups, cuts between speakers, sometimes black bars) and subtitles of the dialogue - that is
+      story_cutscene / conversation. Driving, shooting, chases, police and wanted-level escapes are combat or action.
+      'Mission passed', 'Wasted', 'Busted', the phone, the map, the weapon wheel, character switch sky-camera and
+      loading screens are menu_or_map / loading. stealth_kill and boss_fight are rare.
+  gta5:
+    title: GTA 5
+    match: [gta5, gta 5, gta_5, gtav, gta v, grand theft auto v, grand theft auto 5]
+    view: third-person
+    has_cutscenes: true
+    edit_mode: cinematic
+    policy:
+      isolated_cinematics: forbidden
+      release_date: 2013-09-17
+      spoiler_hold_days: 30
+    characters: [michael, franklin, trevor, lamar, lester, chop, jimmy, amanda, tracey, wade, floyd, ron, dave, steve,
+                 devin, martin, stretch, simeon, johnny, molly]
+    trend:
+      queries: ["gta 5 cutscene", "gta 5 all cutscenes movie", "gta 5 funny cutscenes", "gta 5 best scenes",
+                "gta 5 trevor scene", "gta 5 lamar roast", "gta 5 ending", "gta 5 emotional scene",
+                "gta 5 story explained", "gta 5 cinematic", "gta 5 reaction first time", "gta 5 hidden details cutscene",
+                "gta 5 shorts trevor", "gta 5 michael scene", "gta 5 meme scene", "gta 5 walkthrough part 1"]
+      per_query: 40
+      detail_top: 60
+    notes: >-
+      Grand Theft Auto V: third-person open-world crime game in Los Santos. During GAMEPLAY the radar minimap is in the
+      bottom-left corner with health / armour bars. A STORY CUTSCENE has no minimap, a film-like camera and subtitles -
+      that is story_cutscene / conversation. Shootouts, chases, police escapes and heists are combat. 'Mission passed',
+      'Wasted', 'Busted', the phone, the pause map, the weapon wheel, the character-switch sky camera and loading
+      screens are menu_or_map / loading.
+  bgmi:
+    match: [bgmi, pubg, battlegrounds, battle royale]
+    view: third-person
+    has_cutscenes: false
+    edit_mode: fights          # fight-centred edit (fightedit.py): whole fights from own gunfire to last kill
+    kill_counter:              # the HUD's own kill count = ground truth (the AI alone mistook bat flights for kills)
+      label: Eliminations
+      crop: [70, 2, 240, 56]   # x, y, w, h on the 2560x1440 frame: just 'Eliminations N'
+      step: 2.0                # read it every 2 s
+      spectate_crop: [900, 1100, 760, 110]  # 'Spectating: Teammate' label: player dead, HUD shows the teammate
+      spectate_word: Spectating
+      death_fade: 5.0          # also drop the 5 s grey death fade before spectating starts
+      require_for_shorts: true # movement + killstreak shorts use confirmed eliminations only
+      require_for_montage: true # a montage fight needs >= 1 confirmed elimination
+    kill_feed:                 # the centre kill-feed line: "[slot] killer [gun] [knock/finish icon] victim"
+      crop: [640, 860, 1280, 220]
+      step: 1.0
+    loot:                      # 'Picked up X' line + 'Nearby:' loot list = looting (cut; pickup clicks are not shots)
+      picked_crop: [1000, 160, 800, 110]
+      panel_crop: [1380, 600, 620, 300]
+    player_names: []           # your in-game name(s); also LEARNED per recording
+                               # from the Eliminations counter. A listed name is used only if its kills match the counter.
+    notes: >-
+      This is BGMI / PUBG Mobile, a third-person battle royale recorded on a phone: on-screen touch buttons,
+      minimap and the "Remaining / Eliminations" counter are always visible and are normal gameplay.
+      An enemy KNOCKED DOWN (crawling) or ELIMINATED counts as a kill: look for the kill-feed line
+      ("knocked out", "eliminated", a skull icon), a centre banner with a kill count, the Eliminations number
+      going up, or an enemy dropping / turning into a loot crate. Firing at enemies, hit markers, damage numbers,
+      throwing grenades and fights from vehicles are combat. Parachuting, the plane, driving with no enemies and
+      looting are exploring. The lobby, inventory/backpack, the big map, settings, the results screen, and
+      SPECTATING a teammate after the player died are menu_or_map. stealth_kill and boss_fight never happen.
+      Movement in this game: jumping, vaulting, sliding, dropping from roofs or windows, landing a parachute,
+      driving.
+thumbnails:                # thumbstudio.py - the owner's chosen style (face cut-out + peak moment + <=3 words)
+  style: studio              # studio | simple (old frame + words)
+  facecam_box: null          # a webcam overlay to IGNORE (faceless channel); auto-detected
+  ai: true                   # AI finish (thumbai.py): best scene -> clean composite -> RealVisXL img2img -> 3840x2160
+  ai_strengths: [0.38, 0.28] # how much the AI may repaint; QC picks the best undistorted one (else composite only)
+  # art direction = gameplayforge/templates/thumbnail_art_direction.txt (owner's prompt, 2026-11-17)
+cinematic:                 # story games (cinematic.py) - GTA_CINEMATICS.md explains every rule
+  episode_minutes: 25        # playthrough parts of ~25 min, split at a quiet gameplay point (never inside a cutscene)
+  explore_keep: 6.0          # a long walk / drive with nothing happening keeps 6 s at each end, the middle dissolves
+  max_shorts: 4              # moment shorts per recording (best viral score first, only allowed statuses)
+  min_viral: 4.0             # no short for a scene below this score
+  subtitles: true            # burn the dialogue into moment shorts (bottom band)
+  gameplay_shorts: true      # also make action shorts from gameplay (always allowed, also for GTA)
+  weights: {hook: 0.30, peak: 0.30, trend: 0.25, meme: 0.5, fit: 1.0}
+transcribe:                  # faster-whisper on the GPU (models cached in ~/.cache/huggingface)
+  model: small               # small = multilingual; medium.en = English only. Channel is GLOBAL / English (owner 2026-11-16)
+  language: null             # null = auto-detect
+fight_edit:                # FIGHT-centred editing (owner review 2026-11-11: "full combat is not shown")
+  gunfire:
+    own_level_db: 32         # the player's own shots are this loud above the track's median (distant fire is not)
+  cluster_gap: 8.0           # own shots less than 8 s apart = same fight ...
+  merge_gap: 12.0            # ... and two bursts 12 s apart (reload, reposition) are still one fight
+  kill_late: 4.0             # the HUD counter lags: a kill up to 4 s after the last shot belongs to the fight
+  lead_in: 2.5               # start 2.5 s before the first shot: the player lining up the shot
+  chain_gap: 4.0             # the fight starts at the burst that LEADS to the first kill (shots <= 4 s apart) ...
+  max_build: 10.0            # ... at most 10 s of shooting before the first kill (no walking / looting intro)
+  kill_cluster: 15.0         # kill-feed games (CS2): own kills <= 15 s apart are one fight
+  after_kill: 1.8            # end 1.8 s after the last kill (slow motion on it)
+  lull_cut: 4.0              # inside a fight, >= 4 s with no own shot and no kill (looting, healing) is cut out
+  min_kills: 2               # a single-kill fight is shown only when the AI rates it clutch:
+  single_kill_wow: 8
+  short_min: 12              # whole fights per short, 12-58 s
+  short_target: 24           # a fight shorter than this is chained with the next good fight of the same match
+  chain_within: 150          # ... if it starts within 150 s
+  short_max: 58
+
+kill_edit:                 # kill-centred editing (games with a kill counter) - owner review 2026-11-11
+  search_back: 8.0         # look up to 8 s before each kill for the shooting that leads to it ...
+  search_after: 2.5
+  kill_before: 1.5         # ... the kill itself (1.5 s before to 1.5 s after) is always kept
+  kill_after: 1.5
+  max_buildup: 4.0         # never more than 4 s of build-up before a kill
+  min_piece: 1.5
+  hook_before: 3.0         # montage hook: best clip's last kill, 3 s before to 1.5 s after, slow motion
+  hook_after: 1.5
+  kills_per_short: 3       # owner: "show player 3 kills and then end"
+  short_after: 1.2         # the short ends 1.2 s after the 3rd kill lands
+  short_buildup: 3.0
+  short_max_span: 120      # the 3 kills must happen within 2 minutes of each other
+  review_width: 960
+
+judge:                    # Qwen-VL watches every usable 4-second window and says what the player is doing
+  enabled: true
+  models:                 # first one already downloaded is used (best first)
+    - Qwen/Qwen3-VL-4B-Instruct       # ~9 GB, more accurate; fits the 16 GB RTX 5070 Ti in bf16
+    - Qwen/Qwen3-VL-2B-Instruct       # ~4.3 GB, faster download, a little less accurate
+  window_s: 4
+  frames_per_window: 4    # tested: 8 frames was 8x slower AND less accurate (the model averages to "walking")
+  frame_width: 640
+  batch: 4                # 4 windows per GPU pass. Tested 2026-11-18: 8 overflows the 16 GB GPU (16x slower)
+
+encounters:               # fights / stealth chains = what the montage and combat shorts are made of
+  min_intensity: 4        # sneaking up on or aiming at enemies (4-5) already counts as engaged
+  merge_gap_windows: 3    # up to 12 s of lull between engaged moments = still the same encounter
+  cut_dead_windows: 2     # >= 8 s of walking INSIDE an encounter is cut out (soft dissolve over the cut)
+  lead_in: 3.0            # seconds of approach kept before the first engagement (montage)
+  post_roll: 1.5          # after the last kill, let it land
+  min_kills: 2            # an encounter with one ordinary kill is not shown (unless stealth / spectacular)
+  kill_guard_before: 2.0  # no cut / dissolve / section end within 2 s before a kill ...
+  kill_guard_after: 2.5   # ... or 2.5 s after it - every kill is shown in full
+
+events:                   # used only for PARKOUR shorts (climbs, rooftop runs)
+  min_intensity: 4
+  gap_windows: 2
+  pre_roll: 1.0
+  post_roll: 1.5
+  min_len: 6
+
+# Style decoded from the 8 reference videos you supplied (measured, see STYLE_ANALYSIS.md)
+style:
+  long:
+    target_seconds: 720        # 12 min goal; quality wins - the montage is never padded with weak footage
+    cold_open: true            # best kill of the video (slow-mo) as a 5-6 s hook before the montage
+    cold_open_before: 3.5
+    cold_open_after: 2.0
+    cold_open_no_repeat: true  # the hook moment is taken OUT of its fight later on - it is never shown twice
+    dip: 0.35                  # dip to black between sections (references: ~0.4 s), never a hard cut
+    xfade: 0.30                # soft dissolve where dead time was cut out of a fight
+    min_hype: 5                # judge's 1-10 rating of the whole encounter; below this it is not shown
+    min_rel_score: 0.55        # and it must be at least 55 % as strong as the best encounter of the video
+    upscale_4k: true           # export 3840x2160: YouTube gives 4K uploads a much higher bitrate = sharper
+    sharpen: 0.3               # light unsharp after the 4K upscale
+    cas: 0.8                   # contrast-adaptive sharpening at native resolution BEFORE the upscale (clearer)
+    loudness_lufs: -16
+  slowmo:                      # speed ramp on the decisive kill (cold open + end of every combat short)
+    enabled: true
+    speed: 0.5
+    zoom: 1.12                 # slight punch-in during the slow motion
+    before: 0.5
+    after: 0.8
+  punch_in:                    # far-away kills get a smooth zoom towards them so the kill is clearly SEEN
+    enabled: true
+    small_width: 0.20            # the kill counts as 'far' when it covers < 20 % of the frame width ...
+    small_height: 0.35           # ... and < 35 % of its height
+    fill: 0.45                   # zoom so the fight fills ~45 % of the frame width
+    max_zoom: 1.6                # never more (the recording has only 1440p of detail)
+    before: 1.6                  # zoom spans 1.6 s before the impact ...
+    after: 1.8                   # ... to 1.8 s after it (eases in/out over 0.5 s)
+    frame_width: 960
+  movement:                    # MOVEMENT-KILL short (owner approved 2026-11-11): kills that come straight out of a
+    enabled: true              # move - drop / jump / glide / dash / slide / vehicle onto an enemy - best ones chained
+    lookback: 3.0              # the move must happen within 3 s before the kill
+    min_wow: 6                 # AI rating 1-10 of how impressive the move+kill is
+    before: 3.0                # each clip: from the start of the move ...
+    after: 1.2                 # ... to the body dropping
+    transition: smoothleft
+    trans_d: 0.18
+    length: 30
+    max_moves: 6
+    min_moves: 3               # fewer real movement kills = no movement short (never padded)
+  killstreak:                  # frag-montage short, measured from your Valorant references (lalala / Beggin')
+    enabled: true
+    before: 1.5                  # each clip: 1.5 s before the kill ...
+    after: 1.2                   # ... 1.2 s after (the body drops) - one kill every ~2.5 s like the references
+    transition: smoothleft       # fast whip between kills (references use whip/zoom-blur, never a dip to black)
+    trans_d: 0.18
+    length: 28
+    min_kills: 5                 # fewer good kills in a recording = no killstreak short (never padded)
+  short:
+    themes: [movement, killstreak, combat, stealth, boss]   # parkour-only shorts retired (owner, 2026-11-09)
+    count_per_theme: 3
+    max_total: 6               # 4-6 shorts per run when the footage has them; never padded
+    min_hype: 6                # shorts must be better than ordinary
+    lead_in: 1.5               # shorts start ON the action
+    after_last_kill: 1.8       # end right after the final kill lands
+    fade_out: 0.3
+    length_min: 15
+    length_max: 45             # whole fight with lulls removed; parkour stays <= parkour_max
+    parkour_max: 30
+    layout: crop34_black       # references: 3:4 centre band on black 9:16 canvas. Others: blur | full_crop
+    text:                      # crop34_black only: headline (= title hook) in the top band, kill counter in the bottom
+      enabled: true
+    width: 1080
+    height: 1920
+  grade:                       # very light grade; the references look close to ungraded
+    contrast: 1.05
+    saturation: 1.08
+    sharpen: 0.4
+    cas: 0.6                   # contrast-adaptive sharpening at native resolution (shorts)
+  intro:                       # from the owner's reference 'Royalty | PUBG MOBILE Montage' (shortened from ~70 s)
+    enabled: false             # OWNER RULE 2026-11-13: no channel name in any video, title, description
+    name: ""                   # or tag until the owner explicitly asks for it again - leave off
+    teaser: 3.0                # dark slow-motion teaser of the best kill (s, output length)
+    slow: 0.5
+    name_len: 2.4
+  music: none                  # path to a music file you are allowed to use (e.g. "C:/Users/YOU/Music/track.mp3"); none = game audio only
+  music_mix:                   # montage only; shorts keep game audio
+    game_gain: 0.55            # gunshots and kills stay audible over the music
+    music_gain: 0.8
+    lufs: -10                  # reference measured at -5 LUFS; -10 is loud but leaves headroom
+  captions: none               # references contain no captions / cards / overlays
+  sfx: none                    # references contain no added sound effects

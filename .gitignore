@@ -1,0 +1,19 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Downloaded assets (see README: Setup)
+models/*.onnx
+fonts/*.ttf
+
+# Never commit videos, renders or caches
+*.mp4
+*.mkv
+*.mov
+*.m4a
+*.wav
+*.npz
+GameplayForge_Output/
+_work/
+*.zip

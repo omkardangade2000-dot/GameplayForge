@@ -1,0 +1,19 @@
+numpy
+scipy
+opencv-python
+pyyaml
+pillow
+transformers>=4.49
+accelerate
+safetensors
+sentencepiece
+protobuf
+huggingface_hub
+faster-whisper
+rembg
+yt-dlp
+# Optional (AI thumbnail finish, thumbai.py):
+diffusers
+# Optional (thumbai upscaler / voice-over experiments): spandrel, kokoro
+# PyTorch is installed separately with the CUDA 12.8 build (see install.ps1):
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
