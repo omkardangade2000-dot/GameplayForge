@@ -58,6 +58,23 @@ AI models (SigLIP 2, Qwen3-VL-4B, faster-whisper, optionally RealVisXL) download
 .\.venv\Scripts\python -m gameplayforge doctor   # checks GPU, FFmpeg and models
 ```
 
+## Dashboard (optional)
+
+A local web page to start runs, follow their progress and preview the results, instead of typing commands.
+
+```powershell
+.\dashboard.bat            # starts the dashboard and opens http://127.0.0.1:8770/
+```
+
+- **New run:** pick a recording from `paths.input_dir`, choose Auto or Cinematic mode and a game profile (or auto-detect), and set the usual options (commentary, redo analysis, skip Shorts / long video, skip the AI judge, long video target). **Check setup** runs `doctor`.
+- **Current job:** live step (1-6), elapsed time, last log line, the full log and a Stop button. Only one job runs at a time, because they share the GPU.
+- **Outputs:** every project in `paths.output_dir` with players for the long video, Shorts and cutscenes, the thumbnails, the editing report and the upload/chapter text files (with a Copy button). **Open folder** opens it in Explorer.
+- **Top bar:** CPU, RAM, GPU load / VRAM / temperature and free disk space.
+
+Runs started from the dashboard use exactly the same settings as `run.bat`: every `set NAME=value` line in `run.bat` (for example `CUDA_VISIBLE_DEVICES` or an FFmpeg folder added to `PATH`) is applied. A run keeps going if you close the dashboard window, and the dashboard picks it up again when restarted. Job logs and history are kept in `dashboard/jobs/` (not committed).
+
+The dashboard listens on 127.0.0.1 only and rejects other host names. It can only read files inside the output folder, and it has no upload or publishing features. It uses only the Python standard library plus `PyYAML` and `psutil` (both in `requirements.txt`). Set the environment variable `GF_DASHBOARD_PORT` to use a port other than 8770.
+
 ## Use it responsibly
 
 - Edit **your own** gameplay, or footage you have permission to use. Credit the original creator.
